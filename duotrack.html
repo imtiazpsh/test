@@ -1,0 +1,581 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuoTrack - Cross-Platform Device Locator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            950: '#070a13',
+                        },
+                        brand: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 0.4; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+        .pulse-effect {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40 px-4 py-4 sm:px-6">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-600/10 rounded-xl border border-indigo-500/20">
+                    <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">DuoTrack</h1>
+                    <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Galaxy S25 ⟷ iPhone 16 Link</p>
+                </div>
+            </div>
+            
+            <span class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-semibold shadow-sm">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="connection-badge">Operational</span>
+            </span>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6 justify-center">
+
+        <!-- Top Notification Banner -->
+        <div class="bg-slate-900/60 border border-slate-800/85 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-2xl backdrop-blur-sm">
+            <div class="flex items-center gap-3 text-center sm:text-left">
+                <span class="text-2xl">🌍</span>
+                <div>
+                    <h3 class="font-bold text-sm text-slate-200">Continuous Cross-Platform Synced Tracking</h3>
+                    <p class="text-xs text-slate-400">Pair devices below via a private channel, or use our simulation presets to preview mechanics instantly.</p>
+                </div>
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="toggleSetupModal(true)" class="flex-1 sm:flex-initial text-center bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-600/15">
+                    Pair Real Devices
+                </button>
+                <button onclick="activateDemoMode()" class="flex-1 sm:flex-initial text-center bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-700/40 transition-all">
+                    Load Demo Data
+                </button>
+            </div>
+        </div>
+
+        <!-- THE WIDGET DISPLAY CONTAINER (Premium Widget Aesthetics) -->
+        <div class="relative group">
+            <div class="absolute -inset-1 rounded-3xl bg-gradient-to-r from-indigo-500 to-purple-600 opacity-20 blur transition duration-1000 group-hover:opacity-30"></div>
+            
+            <div class="relative bg-slate-900 border border-slate-800/80 rounded-3xl p-6 shadow-2xl overflow-hidden">
+                <!-- Glowing accent line -->
+                <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-transparent"></div>
+
+                <div class="flex flex-col md:flex-row gap-8 justify-between items-center relative z-10">
+                    
+                    <!-- Left Column: The Interactive Radar / Directional Compass -->
+                    <div class="flex flex-col items-center justify-center gap-4">
+                        <div class="relative w-44 h-44 rounded-full border border-slate-800 bg-slate-950/60 flex items-center justify-center">
+                            
+                            <!-- Radar Circular Grid lines -->
+                            <div class="absolute w-36 h-36 rounded-full border border-slate-900/80"></div>
+                            <div class="absolute w-24 h-24 rounded-full border border-slate-900/40"></div>
+                            <div class="absolute w-12 h-12 rounded-full border border-slate-900/20"></div>
+                            
+                            <!-- Axis crosshairs -->
+                            <div class="absolute inset-y-0 w-[1px] bg-slate-900/60"></div>
+                            <div class="absolute inset-x-0 h-[1px] bg-slate-900/60"></div>
+                            
+                            <!-- Radar sweep rotation overlay -->
+                            <div class="absolute inset-0 rounded-full border border-transparent border-t-indigo-500/20 animate-spin" style="animation-duration: 4s;"></div>
+
+                            <!-- Galaxy S25 (Your Phone) - Anchored in Center -->
+                            <div class="absolute z-10 flex flex-col items-center">
+                                <div class="w-8 h-8 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center shadow-lg">
+                                    <span class="text-xs">📱</span>
+                                </div>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase mt-0.5 tracking-wider">My Galaxy</span>
+                            </div>
+
+                            <!-- Wife's iPhone 16 - Dynamically placed on Compass Radar -->
+                            <div id="wife-pointer-container" class="absolute inset-0 transition-transform duration-700 ease-out" style="transform: rotate(45deg);">
+                                <!-- Pointer Marker positioned near outer edge -->
+                                <div class="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                                    <div class="relative">
+                                        <!-- Ping effect -->
+                                        <div class="absolute inset-0 rounded-full bg-pink-500 pulse-effect"></div>
+                                        <div class="w-9 h-9 rounded-full bg-pink-500/10 border-2 border-pink-500 flex items-center justify-center shadow-lg relative z-10">
+                                            <span class="text-xs">👩🏻‍🦰</span>
+                                        </div>
+                                    </div>
+                                    <!-- Rotated Arrow indicating physical vector -->
+                                    <div class="w-4 h-4 text-pink-400 mt-1 transform rotate-180">
+                                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Directional status label -->
+                        <div class="text-center">
+                            <span id="direction-arrow-text" class="text-xs font-bold text-indigo-400 tracking-wide uppercase">Direction: North-East</span>
+                            <div class="text-[10px] text-slate-500 mt-0.5">Bearing angle: <span id="bearing-value" class="mono">45°</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Column: Distance Widget Numbers -->
+                    <div class="flex-1 flex flex-col items-center md:items-start text-center md:text-left justify-center gap-1">
+                        <span class="text-xs font-extrabold tracking-widest text-pink-400 uppercase">iPhone 16 Distance Widget</span>
+                        <div class="flex items-baseline gap-1.5 mt-2">
+                            <span id="distance-main" class="text-5xl md:text-6xl font-black tracking-tight text-white mono">4.20</span>
+                            <span id="distance-unit" class="text-xl md:text-2xl font-extrabold text-slate-400">km</span>
+                        </div>
+                        <p id="distance-verbal" class="text-xs text-slate-300 mt-1 font-medium bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-800/40">
+                            Wife's iPhone is currently in Lahore, Punjab.
+                        </p>
+                        
+                        <!-- Tracking Indicators / System Metadata -->
+                        <div class="grid grid-cols-2 gap-3 w-full mt-5">
+                            <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/50">
+                                <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Device Signal Status</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                    <span id="iphone-battery" class="text-xs font-bold text-slate-200">92% Battery (iOS)</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/50">
+                                <div class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Last Synced Update</div>
+                                <div id="last-updated-val" class="text-xs font-bold text-slate-200 mt-1 mono">Just now</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- SIMULATOR CONTROLS (Ideal for instant testing in Lahore) -->
+        <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800/85 pb-4 mb-4">
+                <div>
+                    <h3 class="font-bold text-slate-200 text-sm">Interactive Live Simulator</h3>
+                    <p class="text-xs text-slate-400">Change values instantly to test mathematical bearing, arrow rotators, and widgets.</p>
+                </div>
+                <span class="px-2 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-400 font-extrabold uppercase">Lahore Map Context</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Simulation Controls Left -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-medium">Distance Slider</span>
+                            <span id="sim-distance-lbl" class="text-pink-400 font-bold mono">4.20 km</span>
+                        </div>
+                        <input id="slider-distance" type="range" min="0.1" max="50" step="0.1" value="4.2" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-medium">Relative Compass Bearing</span>
+                            <span id="sim-bearing-lbl" class="text-indigo-400 font-bold mono">45° (Northeast)</span>
+                        </div>
+                        <input id="slider-bearing" type="range" min="0" max="359" value="45" class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+                <!-- Simulation Coordinates Info Right -->
+                <div class="flex flex-col gap-3">
+                    <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80 flex flex-col gap-2">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Active Telemetry Coordinates</span>
+                        <div class="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <span class="text-slate-500 block">Galaxy S25 (You)</span>
+                                <span id="galaxy-coords" class="text-slate-200 font-bold mono">31.5204° N, 74.3587° E</span>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block">iPhone 16 (Wife)</span>
+                                <span id="iphone-coords" class="text-pink-400 font-bold mono">31.5472° N, 74.3911° E</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="startAutoWalk()" id="btn-autowalk" class="flex-1 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 text-xs py-2 px-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2">
+                            <span id="walk-icon">▶</span>
+                            <span id="walk-text">Simulate Active Drive/Commute</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- DEVICE PAIRING MODAL -->
+    <div id="setup-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <button onclick="toggleSetupModal(false)" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">✕</button>
+            
+            <h2 class="text-lg font-extrabold text-white">Device Synchronization Setup</h2>
+            <p class="text-xs text-slate-400 mt-1">Establish a live, encrypted web-channel across your Galaxy & iPhone using your browser GPS sensors.</p>
+
+            <div class="my-5 flex flex-col gap-4">
+                <!-- Channel Code -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/80 flex flex-col gap-1.5">
+                    <span class="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Your Pairing Key</span>
+                    <div class="flex items-center justify-between gap-2 mt-1">
+                        <span id="pairing-key-display" class="text-base font-bold text-indigo-400 tracking-wider font-mono">DUO-9831-S</span>
+                        <button onclick="copyPairingKey()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700/50 font-bold transition-all">Copy Link</button>
+                    </div>
+                </div>
+
+                <!-- Setup Steps -->
+                <div class="flex flex-col gap-3">
+                    <div class="flex gap-3">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold">1</span>
+                        <p class="text-xs text-slate-300 mt-0.5">Copy and share the unique link above to your wife's iPhone 16.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold">2</span>
+                        <p class="text-xs text-slate-300 mt-0.5">Open the link in Safari on her iPhone 16 and permit continuous GPS sharing.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <span class="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold">3</span>
+                        <p class="text-xs text-slate-300 mt-0.5">Both phones will update live distances and physical orientation instantly!</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="initRealSync()" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-sm py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/10 transition-all">
+                Enable GPS & Start Sync Engine
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Alerts -->
+    <div id="toast-notif" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 border border-indigo-500/30 text-slate-200 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+            <span class="h-2 w-2 rounded-full bg-indigo-400 animate-ping"></span>
+            <p id="toast-message" class="text-xs font-bold"></p>
+        </div>
+    </div>
+
+    <!-- Bottom Footer -->
+    <footer class="border-t border-slate-900 py-4 px-6 text-center text-[10px] text-slate-600">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+            <span>DuoTrack Widget Suite — Zero bloat cross-platform telemetry framework.</span>
+            <span class="mono">No application installs required.</span>
+        </div>
+    </footer>
+
+    <!-- Location math, State handler & Web Simulator Engines -->
+    <script>
+        // App coordinates setup (defaults centered on Lahore, Pakistan)
+        let galaxyLocation = { lat: 31.5204, lng: 74.3587 }; // Lahore GOR 1
+        let iphoneLocation = { lat: 31.5472, lng: 74.3911 }; // Lahore Gymkhana / Mall Road vicinity
+        
+        // Sim walking state
+        let autoWalkInterval = null;
+        let walkAngle = 0;
+        let activePairingSession = false;
+
+        // Custom Notification Controller
+        function showNotification(text) {
+            const toast = document.getElementById('toast-notif');
+            document.getElementById('toast-message').innerText = text;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Toggle pairing view
+        function toggleSetupModal(show) {
+            const modal = document.getElementById('setup-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function copyPairingKey() {
+            // Secure copy string generator
+            const dummyUrl = window.location.origin + window.location.pathname + "?session=DUO-9831-S";
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = dummyUrl;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            showNotification("Pairing link successfully copied! Send it to your wife's iPhone.");
+        }
+
+        // Math: Haversine Formula for distance
+        function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Earth's Radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // returns distance in km
+        }
+
+        // Math: Bearing (Direction Angle)
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const lat1Rad = lat1 * Math.PI / 180;
+            const lat2Rad = lat2 * Math.PI / 180;
+            
+            const y = Math.sin(dLon) * Math.cos(lat2Rad);
+            const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) -
+                      Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLon);
+            
+            let brng = Math.atan2(y, x) * 180 / Math.PI;
+            return (brng + 360) % 360; // normalized to 0-360 degrees
+        }
+
+        function getDirectionName(bearing) {
+            const directions = [
+                "North", "North-East", "East", "South-East", 
+                "South", "South-West", "West", "North-West"
+            ];
+            const index = Math.round(bearing / 45) % 8;
+            return directions[index];
+        }
+
+        // Main rendering updates
+        function updateWidgetDisplay() {
+            const distance = calculateHaversineDistance(
+                galaxyLocation.lat, galaxyLocation.lng,
+                iphoneLocation.lat, iphoneLocation.lng
+            );
+            
+            const bearing = calculateBearing(
+                galaxyLocation.lat, galaxyLocation.lng,
+                iphoneLocation.lat, iphoneLocation.lng
+            );
+
+            // Update text values
+            document.getElementById('distance-main').innerText = distance.toFixed(2);
+            document.getElementById('bearing-value').innerText = `${Math.round(bearing)}°`;
+            
+            const direction = getDirectionName(bearing);
+            document.getElementById('direction-arrow-text').innerText = `Direction: ${direction}`;
+            
+            // Set rotation of Radar arrow point
+            document.getElementById('wife-pointer-container').style.transform = `rotate(${bearing}deg)`;
+
+            // Update location details
+            let locationContext = "Wife's iPhone 16 is currently around Lahore.";
+            if (distance < 1.0) {
+                locationContext = "Wife's iPhone 16 is in close range. Almost there!";
+            } else if (distance < 5.0) {
+                locationContext = "Wife's iPhone 16 is about a 10 minute drive away.";
+            } else if (distance > 15.0) {
+                locationContext = "Wife's iPhone 16 is in another part of the city.";
+            }
+            document.getElementById('distance-verbal').innerText = locationContext;
+
+            // Coordinates Display
+            document.getElementById('galaxy-coords').innerText = `${galaxyLocation.lat.toFixed(4)}° N, ${galaxyLocation.lng.toFixed(4)}° E`;
+            document.getElementById('iphone-coords').innerText = `${iphoneLocation.lat.toFixed(4)}° N, ${iphoneLocation.lng.toFixed(4)}° E`;
+
+            // Last Updated Value
+            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('last-updated-val').innerText = timeString;
+        }
+
+        // Slider events
+        const sliderDistance = document.getElementById('slider-distance');
+        const sliderBearing = document.getElementById('slider-bearing');
+
+        sliderDistance.addEventListener('input', (e) => {
+            const dist = parseFloat(e.target.value);
+            document.getElementById('sim-distance-lbl').innerText = `${dist.toFixed(2)} km`;
+            
+            // Recalculate iphone latitude/longitude based on distance & current angle
+            const bearingDeg = parseFloat(sliderBearing.value);
+            const bearingRad = bearingDeg * Math.PI / 180;
+            
+            // Calculate mock location
+            const earthRadius = 6371; // km
+            const lat1 = galaxyLocation.lat * Math.PI / 180;
+            const lon1 = galaxyLocation.lng * Math.PI / 180;
+            
+            const lat2 = Math.asin(
+                Math.sin(lat1) * Math.cos(dist / earthRadius) +
+                Math.cos(lat1) * Math.sin(dist / earthRadius) * Math.cos(bearingRad)
+            );
+            
+            const lon2 = lon1 + Math.atan2(
+                Math.sin(bearingRad) * Math.sin(dist / earthRadius) * Math.cos(lat1),
+                Math.cos(dist / earthRadius) - Math.sin(lat1) * Math.sin(lat2)
+            );
+
+            iphoneLocation.lat = lat2 * 180 / Math.PI;
+            iphoneLocation.lng = lon2 * 180 / Math.PI;
+            updateWidgetDisplay();
+        });
+
+        sliderBearing.addEventListener('input', (e) => {
+            const bearingDeg = parseFloat(e.target.value);
+            const direction = getDirectionName(bearingDeg);
+            document.getElementById('sim-bearing-lbl').innerText = `${bearingDeg}° (${direction})`;
+
+            // Shift coordinate matching the slider distance
+            const dist = parseFloat(sliderDistance.value);
+            const bearingRad = bearingDeg * Math.PI / 180;
+            
+            const earthRadius = 6371;
+            const lat1 = galaxyLocation.lat * Math.PI / 180;
+            const lon1 = galaxyLocation.lng * Math.PI / 180;
+            
+            const lat2 = Math.asin(
+                Math.sin(lat1) * Math.cos(dist / earthRadius) +
+                Math.cos(lat1) * Math.sin(dist / earthRadius) * Math.cos(bearingRad)
+            );
+            
+            const lon2 = lon1 + Math.atan2(
+                Math.sin(bearingRad) * Math.sin(dist / earthRadius) * Math.cos(lat1),
+                Math.cos(dist / earthRadius) - Math.sin(lat1) * Math.sin(lat2)
+            );
+
+            iphoneLocation.lat = lat2 * 180 / Math.PI;
+            iphoneLocation.lng = lon2 * 180 / Math.PI;
+            updateWidgetDisplay();
+        });
+
+        // Auto Walk Simulation Driver
+        function startAutoWalk() {
+            const btn = document.getElementById('btn-autowalk');
+            const txt = document.getElementById('walk-text');
+            const icon = document.getElementById('walk-icon');
+
+            if (autoWalkInterval) {
+                clearInterval(autoWalkInterval);
+                autoWalkInterval = null;
+                txt.innerText = "Simulate Active Drive/Commute";
+                icon.innerText = "▶";
+                btn.className = "flex-1 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 text-xs py-2 px-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2";
+                showNotification("Drive simulation stopped.");
+            } else {
+                showNotification("Simulating active drive in Lahore! Watch the widget update.");
+                txt.innerText = "Stop Commute Simulation";
+                icon.innerText = "⏹";
+                btn.className = "flex-1 bg-rose-600/10 hover:bg-rose-600/20 text-rose-400 border border-rose-500/20 text-xs py-2 px-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2";
+                
+                autoWalkInterval = setInterval(() => {
+                    // Drive simulation circling Lahore
+                    walkAngle += 0.05;
+                    const r = 0.04; // circle radius scale
+                    
+                    iphoneLocation.lat = 31.5472 + (r * Math.sin(walkAngle));
+                    iphoneLocation.lng = 74.3911 + (r * Math.cos(walkAngle * 0.8));
+                    
+                    // Sync values to UI
+                    const rawDist = calculateHaversineDistance(
+                        galaxyLocation.lat, galaxyLocation.lng,
+                        iphoneLocation.lat, iphoneLocation.lng
+                    );
+                    const rawBear = calculateBearing(
+                        galaxyLocation.lat, galaxyLocation.lng,
+                        iphoneLocation.lat, iphoneLocation.lng
+                    );
+
+                    sliderDistance.value = rawDist.toFixed(1);
+                    document.getElementById('sim-distance-lbl').innerText = `${rawDist.toFixed(2)} km`;
+                    
+                    sliderBearing.value = Math.round(rawBear);
+                    document.getElementById('sim-bearing-lbl').innerText = `${Math.round(rawBear)}° (${getDirectionName(rawBear)})`;
+
+                    updateWidgetDisplay();
+                }, 1000);
+            }
+        }
+
+        // Trigger Real Sensors Synchronization 
+        function initRealSync() {
+            if (!navigator.geolocation) {
+                showNotification("Error: Geolocation API is not supported on this device browser.");
+                return;
+            }
+
+            toggleSetupModal(false);
+            showNotification("Pairing request initialized. Waiting for continuous GPS updates...");
+            document.getElementById('connection-badge').innerText = "Acquiring GPS Signal...";
+            
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    galaxyLocation.lat = position.coords.latitude;
+                    galaxyLocation.lng = position.coords.longitude;
+                    updateWidgetDisplay();
+                    
+                    document.getElementById('connection-badge').innerText = "Live Synced via GPS";
+                    document.getElementById('connection-badge').parentElement.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-400 font-semibold shadow-sm";
+                },
+                (error) => {
+                    showNotification("Could not acquire accurate GPS lock: " + error.message);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        // Quick demo set
+        function activateDemoMode() {
+            // Move Galaxy and iPhone to typical Lahore locations
+            galaxyLocation = { lat: 31.5204, lng: 74.3587 }; // GOR 1
+            iphoneLocation = { lat: 31.5624, lng: 74.3211 }; // Near Badshahi Mosque (6.1 km)
+            
+            sliderDistance.value = "6.1";
+            document.getElementById('sim-distance-lbl').innerText = "6.10 km";
+            sliderBearing.value = "325";
+            document.getElementById('sim-bearing-lbl').innerText = "325° (North-West)";
+            
+            updateWidgetDisplay();
+            showNotification("Demo Lahore coordinates loaded!");
+        }
+
+        // Initialize state view onload
+        window.onload = function() {
+            updateWidgetDisplay();
+        };
+    </script>
+</body>
+</html>
+
+```
