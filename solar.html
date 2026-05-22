@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knox Inverter Live Monitor</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --solar-color: #eab308;
+            --battery-color: #22c55e;
+            --load-color: #3b82f6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 4px 0;
+            font-weight: 600;
+        }
+
+        .timestamp {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+        }
+
+        .grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #334155;
+        }
+
+        .card-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .card-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-sub);
+            font-weight: 500;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* Dynamic Status Colors */
+        .solar .card-value { color: var(--solar-color); }
+        .battery .card-value { color: var(--battery-color); }
+        .load .card-value { color: var(--load-color); }
+
+        .error-message {
+            background-color: #7f1d1d;
+            border: 1px solid #dc2626;
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Knox Hybrid Monitor</h1>
+        <div class="timestamp" id="last-update">Connecting to system...</div>
+    </header>
+
+    <div class="error-message" id="error-box"></div>
+
+    <div class="grid">
+        <div class="card solar">
+            <div class="card-left">
+                <span class="card-label">Solar Generation</span>
+                <span class="card-value" id="solar-val">0.00 kW</span>
+            </div>
+        </div>
+
+        <div class="card battery">
+            <div class="card-left">
+                <span class="card-label">Battery State</span>
+                <span class="card-value" id="battery-val">0%</span>
+            </div>
+        </div>
+
+        <div class="card load">
+            <div class="card-left">
+                <span class="card-label">Household Load</span>
+                <span class="card-value" id="load-val">0.00 kW</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Your exact working endpoint string
+    const targetUrl = "http://android.shinemonitor.com/public/?sign=4db568424bd3bf501b610727398e7b8de054f4f4&salt=1779419438595&token=CN2e76163f-5283-48a4-974b-97248558d7b4&action=webQueryDeviceEnergyFlowEs&pn=E50000252161011889&sn=96142505114330&devaddr=1&devcode=6431&i18n=en_US&lang=en_US&source=1&_app_client_=android&_app_id_=com.eybond.smartclient.knoxhybrid&_app_version_=1.2.2.1";
+
+    async function fetchSolarTelemetry() {
+        const errorBox = document.getElementById('error-box');
+        
+        try {
+            // Append a raw timestamp parameter to bust browser cache streams completely
+            const response = await fetch(`${targetUrl}&_cb=${Date.now()}`);
+            
+            if (!response.ok) throw new Error("Network connectivity issue.");
+            
+            const resData = await response.json();
+            
+            if (resData.err !== 0) {
+                throw new Error(`API Error: ${resData.desc}`);
+            }
+            
+            errorBox.style.display = 'none';
+            
+            // Pluck values using clean object indexing
+            const metrics = resData.dat;
+            const solarPower = parseFloat(metrics.pv_status[0].val).toFixed(2);
+            const batterySoc = parseFloat(metrics.bt_status[0].val).toFixed(0);
+            const loadPower = parseFloat(metrics.bc_status[0].val).toFixed(2);
+
+            // Bind directly to document elements
+            document.getElementById('solar-val').innerText = `${solarPower} kW`;
+            document.getElementById('battery-val').innerText = `${batterySoc}%`;
+            document.getElementById('load-val').innerText = `${loadPower} kW`;
+            document.getElementById('last-update').innerText = `Last System Update: ${metrics.date}`;
+
+        } catch (err) {
+            console.error(err);
+            errorBox.innerText = `Failed to sync metrics: ${err.message}. If this persists, your session token may have expired.`;
+            errorBox.style.display = 'block';
+        }
+    }
+
+    // Run immediately on page open
+    fetchSolarTelemetry();
+
+    // Auto-refresh data loop every 30 seconds
+    setInterval(fetchSolarTelemetry, 30000);
+</script>
+</body>
+</html>
