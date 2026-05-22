@@ -14,6 +14,7 @@
             --battery-color: #22c55e;
             --load-color: #3b82f6;
             --mode-color: #a855f7;
+            --grid-color: #f97316;
         }
 
         body {
@@ -90,6 +91,7 @@
         .battery .card-value { color: var(--battery-color); }
         .load .card-value { color: var(--load-color); }
         .mode .card-value { color: var(--mode-color); }
+        .grid-card .card-value { color: var(--grid-color); }
 
         .error-message {
             background-color: #7f1d1d;
@@ -119,6 +121,13 @@
             <div class="card-left">
                 <span class="card-label">System Mode</span>
                 <span class="card-value" id="mode-val">Loading...</span>
+            </div>
+        </div>
+
+        <div class="card grid-card">
+            <div class="card-left">
+                <span class="card-label">Grid Status</span>
+                <span class="card-value" id="grid-val">0.00 kW</span>
             </div>
         </div>
 
@@ -176,33 +185,47 @@
                 errorBox.style.display = 'none';
                 currentProxyIndex = (currentProxyIndex + i) % proxies.length;
 
-                const metrics = resData.dat;
+                const metrics = resData.dat || {};
 
+                // Core values
                 const solarPower = parseFloat(metrics.pv_status?.[0]?.val || 0).toFixed(2);
                 const batterySoc = parseFloat(metrics.bt_status?.[0]?.val || 0).toFixed(0);
                 const loadPower = parseFloat(metrics.bc_status?.[0]?.val || 0).toFixed(2);
 
-                let systemMode = "Unknown";
-                if (metrics.work_mode?.[0]?.val) systemMode = metrics.work_mode[0].val;
-                else if (metrics.sys_status?.[0]?.val) systemMode = metrics.sys_status[0].val;
-                else if (metrics.run_mode?.[0]?.val) systemMode = metrics.run_mode[0].val;
-                else if (metrics.mode?.[0]?.val) systemMode = metrics.mode[0].val;
+                // Grid Status
+                let gridPower = 0;
+                if (metrics.grid_status?.[0]?.val) gridPower = parseFloat(metrics.grid_status[0].val);
+                else if (metrics.grid_in?.[0]?.val) gridPower = parseFloat(metrics.grid_in[0].val);
+                else if (metrics.grid_out?.[0]?.val) gridPower = -parseFloat(metrics.grid_out[0].val); // negative = export
+                const gridDisplay = gridPower >= 0 ? `+\( {gridPower.toFixed(2)} kW` : ` \){gridPower.toFixed(2)} kW`;
 
+                // System Mode - Try multiple possible fields
+                let systemMode = "Unknown";
+                const modeFields = ['work_mode', 'sys_status', 'run_mode', 'mode', 'status', 'system_mode'];
+                for (const field of modeFields) {
+                    if (metrics[field]?.[0]?.val) {
+                        systemMode = metrics[field][0].val;
+                        break;
+                    }
+                }
+
+                // Update UI
                 document.getElementById('solar-val').innerText = `${solarPower} kW`;
                 document.getElementById('battery-val').innerText = `${batterySoc}%`;
                 document.getElementById('load-val').innerText = `${loadPower} kW`;
+                document.getElementById('grid-val').innerText = gridDisplay;
                 document.getElementById('mode-val').innerText = systemMode;
-                document.getElementById('last-update').innerText = `Last Update: ${metrics.date || 'N/A'}`;
+                document.getElementById('last-update').innerText = `Last Update: ${metrics.date || 'Just now'}`;
 
                 return true;
 
             } catch (e) {
-                console.log(`Proxy ${i+1} failed`);
+                console.log(`Proxy failed, trying next...`);
                 continue;
             }
         }
 
-        throw new Error("All proxies failed. Please refresh.");
+        throw new Error("All proxies failed. Please refresh page.");
     }
 
     async function fetchSolarTelemetry() {
@@ -216,10 +239,8 @@
         }
     }
 
-    // Initial fetch
+    // Initial fetch + auto refresh every 30 seconds
     fetchSolarTelemetry();
-    
-    // Auto refresh every 30 seconds
     setInterval(fetchSolarTelemetry, 30000);
 </script>
 </body>
